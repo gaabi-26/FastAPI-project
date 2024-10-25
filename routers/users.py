@@ -1,7 +1,9 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-app = FastAPI()
+router = APIRouter(
+    prefix="/user",
+    tags=["users"],)
 
 # Inicia el server: uvicorn users:app --reload
 # Detener el server: CTRL+C
@@ -21,23 +23,23 @@ users_list = [User(id=1, name="Gabriel", surname="Martinez", url="http//example.
         User(id=3, name="Alan", surname="Rodriguez", url="http//example.com", age="19"),]
 
 
-# Url local: http://127.0.0.1:8000/users
-@app.get("/users")
+# Url local: http://127.0.0.1:8000/users/
+@router.get("s/") #/users/
 async def users():
     return users_list
 
 
-@app.get("/user/{id}") # Path
+@router.get("/{id}") # Path
 async def user(id: int):
     return search_users(id)    
 
 
-@app.get("/userquery/") # Query
+@router.get("/") # Query
 async def user(id: int):
     return search_users(id)    
 
 
-@app.post("/user/", status_code=201)
+@router.post("/", status_code=201)
 async def user(user: User):
     if (type(search_users(user.id)) != User):
         users_list.append(user)
@@ -45,7 +47,7 @@ async def user(user: User):
     raise HTTPException(status_code=409, detail="User already exists")
 
 
-@app.put("/user/")
+@router.put("/")
 async def user(user: User):
     for index, user_saved in enumerate(users_list):
         if (user_saved.id == user.id):
@@ -54,7 +56,7 @@ async def user(user: User):
     return {"error":"User not found"}
 
 
-@app.delete("/user/{id}") # Path
+@router.delete("/{id}") # Path
 async def user(id: int):
     for index, user_saved in enumerate(users_list):
         if (user_saved.id == id):
