@@ -39,7 +39,7 @@ async def user(id: int):
     return search_users(id)    
 
 
-@router.post("/", status_code=201)
+@router.post("/", response_model=User, status_code=201)
 async def user(user: User):
     if (type(search_users(user.id)) != User):
         users_list.append(user)
