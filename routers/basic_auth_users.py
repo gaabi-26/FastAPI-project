@@ -10,7 +10,7 @@ router = APIRouter(prefix="/basicauth",
                    tags=["basicauth"],
                    responses={status.HTTP_404_NOT_FOUND: {"message": "No encontrado"}})
 
-oauth2 = OAuth2PasswordBearer(tokenUrl="login")
+oauth2 = OAuth2PasswordBearer(tokenUrl="login") # Le dice a FastAPI que los tokens se obtienen en la ruta "/login"
 
 
 class User(BaseModel):
@@ -44,12 +44,12 @@ users_db = {
 
 def search_user_db(username: str):
     if username in users_db:
-        return UserDB(**users_db[username])
+        return UserDB(**users_db[username]) # El ** desempaqueta el diccionario
 
 
 def search_user(username: str):
     if username in users_db:
-        return User(**users_db[username])
+        return User(**users_db[username]) 
 
 
 async def current_user(token: str = Depends(oauth2)):
@@ -59,27 +59,23 @@ async def current_user(token: str = Depends(oauth2)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciales de autenticación inválidas",
             headers={"WWW-Authenticate": "Bearer"})
-
     if user.disabled:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Usuario inactivo")
-
     return user
 
 
 @router.post("/login")
 async def login(form: OAuth2PasswordRequestForm = Depends()):
-    user_db = users_db.get(form.username)
+    user_db = users_db.get(form.username) # Obtiene los datos como diccionario
     if not user_db:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="El usuario no es correcto")
-
-    user = search_user_db(form.username)
+    user = search_user_db(form.username) # Convierte los datos a un objeto UserDB
     if not form.password == user.password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="La contraseña no es correcta")
-
     return {"access_token": user.username, "token_type": "bearer"}
 
 
