@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
-from db.models.users import User
+from db.models.user import User
+from db.schemas.user import user_schema
 from db.client import db_client
 
 router = APIRouter(
@@ -18,25 +19,24 @@ async def users():
 
 @router.get("/{id}") 
 async def user(id: int):
-    return search_users(id)    
+    return search_user_by_email(id)    
 
 
 @router.get("/") 
 async def user(id: int):
-    return search_users(id)    
+    return search_user_by_email(id)    
 
 
 @router.post("/", response_model=User, status_code=status.HTTP_201_CREATED)
 async def user(user: User):
-    # if (type(search_users(user.id)) != User):
-    #     users_list.append(user)
-    #     return user
+    if (type(search_user_by_email(user.email)) != User):
+        raise  HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists")    
 
     user_dict = dict(user) # Transformar user en un diccionario
     del user_dict["id"] # Borrar el campo id para que mongoDB pueda generarla automaticamente
-    db_client.local.user.insert_one(user_dict)
-
-    return user
+    id = db_client.local.users.insert_one(user_dict).inserted_id
+    new_user = user_schema(db_client.local.users.find_one({"_id":id}))
+    return User(**new_user)
 
 @router.put("/")
 async def user(user: User):
@@ -56,9 +56,9 @@ async def user(id: int):
     return {"error":"User not found"}
 
 
-def search_users(id: int):
-    users = filter(lambda user: user.id == id, users_list)
+def search_user_by_email(email: str):
     try:
-        return list(users)[0]
+        user = db_client.local.users.find_one({"email":email})
+        return  user_schema(User(**user))
     except:
         return {"error":"User not found"}
